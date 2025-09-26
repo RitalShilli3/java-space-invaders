@@ -1,4 +1,4 @@
-import javax.swing.ImageIcon;
+import java.awt.Image;
 
 /**
  * 
@@ -13,13 +13,16 @@ public class GameOver extends Sprite implements Commons {
 	 * Constructor
 	 */
 	public GameOver() {
-		ImageIcon ii = new ImageIcon(this.getClass().getResource(gameOver));
+		
+		// Use of SpriteManager instead of new ImageIcon
+        Image img = SpriteManager.getInstance().getSprite(
+            this.getClass().getResource(gameOver).getPath()
+        );
 
-		setWidth(ii.getImage().getWidth(null));
-
-		setImage(ii.getImage());
-		setX(0);
-		setY(0);
+        setWidth(img.getWidth(null));
+        setImage(img);
+        setX(0);
+        setY(0);
 	}
 
 	/*

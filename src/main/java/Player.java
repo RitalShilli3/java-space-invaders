@@ -1,6 +1,5 @@
+import java.awt.Image;
 import java.awt.event.KeyEvent;
-
-import javax.swing.ImageIcon;
 
 /**
  * 
@@ -18,13 +17,17 @@ public class Player extends Sprite implements Commons {
 	 * Constructor
 	 */
 	public Player() {
-		ImageIcon ii = new ImageIcon(this.getClass().getResource(player));
 
-		width = ii.getImage().getWidth(null);
+		 // Use of SpriteManager instead of new ImageIcon
+        Image img = SpriteManager.getInstance().getSprite(
+            this.getClass().getResource(player).getPath()
+        );
 
-		setImage(ii.getImage());
-		setX(START_X);
-		setY(START_Y);
+		setImage(img);
+        width = img.getWidth(null);
+
+        setX(START_X);
+        setY(START_Y);
 	}
 
 	public void act() {

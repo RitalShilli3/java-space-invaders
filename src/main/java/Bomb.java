@@ -1,4 +1,3 @@
-import javax.swing.ImageIcon;
 
 /**
  * 
@@ -13,11 +12,13 @@ public class Bomb extends Sprite {
 	 * Constructor
 	 */
 	public Bomb(int x, int y) {
+
 		setDestroyed(true);
 		this.x = x;
 		this.y = y;
-		ImageIcon ii = new ImageIcon(this.getClass().getResource(bomb));
-		setImage(ii.getImage());
+
+		 // Use of SpriteManager instead of new ImageIcon
+        setImage(SpriteManager.getInstance().getSprite(this.getClass().getResource(bomb).getPath()));
 	}
 
 	public void setDestroyed(boolean destroyed) {

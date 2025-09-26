@@ -3,17 +3,14 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
-
-import javax.swing.ImageIcon;
 import javax.swing.JPanel;
-import javax.imageio.ImageIO;
 
 /**
  * 
@@ -67,13 +64,10 @@ public class Board extends JPanel implements Runnable, Commons {
 	public void gameInit() {
 		aliens = new ArrayList();
 
-		ImageIcon ii = new ImageIcon(this.getClass().getResource(alienpix));
-
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
 				Alien alien = new Alien(alienX + 18 * j, alienY + 18 * i);
-				alien.setImage(ii.getImage());
-				aliens.add(alien);
+        		aliens.add(alien);
 			}
 		}
 
@@ -187,7 +181,7 @@ public class Board extends JPanel implements Runnable, Commons {
 	public void animationCycle() {
 		if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
 			ingame = false;
-			message = "Parabéns! Você salvou a galáxia!";
+			message = "Parabï¿½ns! Vocï¿½ salvou a galï¿½xia!";
 		}
 
 		// player
@@ -209,9 +203,11 @@ public class Board extends JPanel implements Runnable, Commons {
 					if (shotX >= (alienX) && shotX <= (alienX + ALIEN_WIDTH)
 							&& shotY >= (alienY)
 							&& shotY <= (alienY + ALIEN_HEIGHT)) {
-						ImageIcon ii = new ImageIcon(getClass().getResource(
-								expl));
-						alien.setImage(ii.getImage());
+						// Use of SpriteManager for explosion image
+                        Image explImg = SpriteManager.getInstance().getSprite(
+                            getClass().getResource(expl).getPath()
+                        );
+						alien.setImage(explImg);
 						alien.setDying(true);
 						deaths++;
 						shot.die();
@@ -266,7 +262,7 @@ public class Board extends JPanel implements Runnable, Commons {
 				if (y > GROUND - ALIEN_HEIGHT) {
 					havewon = false;
 					ingame = false;
-					message = "Aliens estão invadindo a galáxia!";
+					message = "Aliens estï¿½o invadindo a galï¿½xia!";
 				}
 
 				alien.act(direction);
@@ -298,12 +294,14 @@ public class Board extends JPanel implements Runnable, Commons {
 				if (bombX >= (playerX) && bombX <= (playerX + PLAYER_WIDTH)
 						&& bombY >= (playerY)
 						&& bombY <= (playerY + PLAYER_HEIGHT)) {
-					ImageIcon ii = new ImageIcon(this.getClass().getResource(
-							expl));
-					player.setImage(ii.getImage());
+					
+                    // Use SpriteManager for explosion image
+                    Image explImg = SpriteManager.getInstance().getSprite(
+                        getClass().getResource(expl).getPath()
+                    );
+                    player.setImage(explImg);
 					player.setDying(true);
 					b.setDestroyed(true);
-					;
 				}
 			}
 

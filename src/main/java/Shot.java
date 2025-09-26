@@ -1,4 +1,3 @@
-import javax.swing.ImageIcon;
 
 
 public class Shot extends Sprite {
@@ -12,8 +11,9 @@ public class Shot extends Sprite {
 
     public Shot(int x, int y) {
 
-        ImageIcon ii = new ImageIcon(this.getClass().getResource(shot));
-        setImage(ii.getImage());
+       // use of SpriteManager instead of new ImagIcon
+       setImage(SpriteManager.getInstance().getSprite(this.getClass().getResource(shot).getPath()));
+
         setX(x + H_SPACE);
         setY(y - V_SPACE);
     }

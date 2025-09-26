@@ -1,4 +1,3 @@
-import javax.swing.ImageIcon;
 
 /**
  * 
@@ -17,9 +16,9 @@ public class Alien extends Sprite {
         this.y = y;
 
         bomb = new Bomb(x, y);
-        ImageIcon ii = new ImageIcon(this.getClass().getResource(alien));
-        setImage(ii.getImage());
-
+        
+        // Use of SpriteManager singleton instead of new ImageIcon
+        setImage(SpriteManager.getInstance().getSprite(this.getClass().getResource(alien).getPath()));
     }
 
     public void act(int direction) {

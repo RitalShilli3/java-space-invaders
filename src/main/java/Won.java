@@ -1,4 +1,4 @@
-import javax.swing.ImageIcon;
+import java.awt.Image;
 
 /**
  * 
@@ -13,15 +13,20 @@ public class Won extends Sprite implements Commons{
      */
     public Won() {
 
-        ImageIcon ii = new ImageIcon(this.getClass().getResource(won));
+        // Load image from SpriteManager singleton
+        Image img = SpriteManager.getInstance().getSprite(
+            this.getClass().getResource(won).getPath()
+        );
 
-        width = ii.getImage().getWidth(null); 
-
-        setImage(ii.getImage());
+        setImage(img);
         setX(0);
         setY(0);
-    }
 
+        if (img != null) {
+            width = img.getWidth(null);
+        }
+    }
+    
     /*
      * Getters & Setters
      */
