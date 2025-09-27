@@ -24,7 +24,7 @@ public class Board extends JPanel implements Runnable, Commons {
 	private static final long serialVersionUID = 1L;
 
 	private Dimension d;
-	private ArrayList aliens;
+	private ArrayList<Alien> aliens;
 	private Player player;
 	private Shot shot;
 	private GameOver gameend;
@@ -62,11 +62,17 @@ public class Board extends JPanel implements Runnable, Commons {
 	}
 
 	public void gameInit() {
-		aliens = new ArrayList();
+       // using the prorotype pattern to create aliens
+		Alien alienPrototype = new Alien(0, 0);
+		// Use of SpriteManager singleton instead of new ImageIcon
+		alienPrototype.setImage(SpriteManager.getInstance().getSprite(alienPrototype.getClass().getResource(alienpix).getPath()));
+		aliens = new ArrayList<>();
 
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
-				Alien alien = new Alien(alienX + 18 * j, alienY + 18 * i);
+				Alien alien = alienPrototype.clone();
+				//to set the position of aliens 
+				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
         		aliens.add(alien);
 			}
 		}
