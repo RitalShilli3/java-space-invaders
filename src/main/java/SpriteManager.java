@@ -53,20 +53,4 @@ public final class SpriteManager {
         return img;
     }
 
-    /**
-     * Optionally preload a set of images (call at game initialization).
-     */
-    public void preloadSprites(String[] paths) {
-        if (paths == null) return;
-        for (String p : paths) {
-            getSprite(p);
-        }
-    }
-
-    /**
-     * Clear the cache (if you need to reload, e.g., resolution change).
-     */
-    public void clearCache() {
-        cache.clear();
-    }
 }
