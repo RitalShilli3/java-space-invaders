@@ -99,7 +99,10 @@ public class SpaceInvaders extends JFrame implements Commons {
 
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.setSize(BOARD_WIDTH, BOARD_HEIGTH);
-			frame.getContentPane().add(new Board());
+			
+			// Use factory to create the Board so Board creation is centralized
+			BoardFactory factory = new ConcreteBoardFactory();
+			frame.getContentPane().add(factory.createBoard());
 			frame.setResizable(false);
 			frame.setLocationRelativeTo(null);
 			frame.setVisible(true);

@@ -42,11 +42,22 @@ public class Board extends JPanel implements Runnable, Commons {
 	private String message = "Seu planeta nos pertence agora...";
 
 	private Thread animator;
+	// optional injected prototype for creating aliens (Prototype pattern)
+	private Alien alienPrototype;
 
 	/*
 	 * Constructor
 	 */
 	public Board() {
+		this(null);
+	}
+
+	/**
+	 * Create a Board optionally using an injected Alien prototype.
+	 * If prototype is null the board will create its own prototype.
+	 */
+	public Board(Alien alienPrototype) {
+		this.alienPrototype = alienPrototype;
 		addKeyListener(new TAdapter());
 		setFocusable(true);
 		d = new Dimension(BOARD_WIDTH, BOARD_HEIGTH);
@@ -62,18 +73,28 @@ public class Board extends JPanel implements Runnable, Commons {
 	}
 
 	public void gameInit() {
-       // using the prorotype pattern to create aliens
-		Alien alienPrototype = new Alien(0, 0);
-		// Use of SpriteManager singleton instead of new ImageIcon
-		alienPrototype.setImage(SpriteManager.getInstance().getSprite(alienPrototype.getClass().getResource(alienpix).getPath()));
+		// using the prototype pattern to create aliens
+		Alien proto = this.alienPrototype;
+		if (proto == null) {
+			proto = new Alien(0, 0);
+			
+			// Use of SpriteManager singleton instead of new ImageIcon
+			proto.setImage(SpriteManager.getInstance().getSprite(proto.getClass().getResource(alienpix).getPath()));
+		} else {
+			// ensure prototype has an image configured (fallback to default)
+			if (proto.getImage() == null) {
+				proto.setImage(SpriteManager.getInstance().getSprite(proto.getClass().getResource(alienpix).getPath()));
+			}
+		}
+
 		aliens = new ArrayList<>();
 
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
-				Alien alien = alienPrototype.clone();
-				//to set the position of aliens 
+				Alien alien = proto.clone();
+				// to set the position of aliens
 				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
-        		aliens.add(alien);
+				aliens.add(alien);
 			}
 		}
 
