@@ -7,8 +7,8 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import javax.swing.JPanel;
 
@@ -24,7 +24,7 @@ public class Board extends JPanel implements Runnable, Commons {
 	private static final long serialVersionUID = 1L;
 
 	private Dimension d;
-	private ArrayList<Alien> aliens;
+	private AlienGroup alienGroup; // root of the Composite structure
 	private Player player;
 	private Shot shot;
 	private GameOver gameend;
@@ -77,7 +77,7 @@ public class Board extends JPanel implements Runnable, Commons {
 		Alien proto = this.alienPrototype;
 		if (proto == null) {
 			proto = new Alien(0, 0);
-			
+
 			// Use of SpriteManager singleton instead of new ImageIcon
 			proto.setImage(SpriteManager.getInstance().getSprite(proto.getClass().getResource(alienpix).getPath()));
 		} else {
@@ -87,14 +87,13 @@ public class Board extends JPanel implements Runnable, Commons {
 			}
 		}
 
-		aliens = new ArrayList<>();
+		alienGroup = new AlienGroup();
 
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
 				Alien alien = proto.clone();
-				// to set the position of aliens
 				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
-				aliens.add(alien);
+				alienGroup.add(alien); // 👈 add each alien to the group instead of list
 			}
 		}
 
@@ -107,20 +106,9 @@ public class Board extends JPanel implements Runnable, Commons {
 		}
 	}
 
+	// Updated to use Composite pattern
 	public void drawAliens(Graphics g) {
-		Iterator it = aliens.iterator();
-
-		while (it.hasNext()) {
-			Alien alien = (Alien) it.next();
-
-			if (alien.isVisible()) {
-				g.drawImage(alien.getImage(), alien.getX(), alien.getY(), this);
-			}
-
-			if (alien.isDying()) {
-				alien.die();
-			}
-		}
+		alienGroup.draw(g);
 	}
 
 	public void drawPlayer(Graphics g) {
@@ -145,13 +133,12 @@ public class Board extends JPanel implements Runnable, Commons {
 	}
 
 	public void drawBombing(Graphics g) {
-		Iterator i3 = aliens.iterator();
+		// }
+		if (alienGroup == null)
+			return;
 
-		while (i3.hasNext()) {
-			Alien a = (Alien) i3.next();
-
+		for (Alien a : alienGroup.getAllAliens()) {
 			Bomb b = a.getBomb();
-
 			if (!b.isDestroyed()) {
 				g.drawImage(b.getImage(), b.getX(), b.getY(), this);
 			}
@@ -217,27 +204,28 @@ public class Board extends JPanel implements Runnable, Commons {
 
 		// shot
 		if (shot.isVisible()) {
-			Iterator it = aliens.iterator();
-			int shotX = shot.getX();
-			int shotY = shot.getY();
 
-			while (it.hasNext()) {
-				Alien alien = (Alien) it.next();
-				int alienX = alien.getX();
-				int alienY = alien.getY();
+			// Updated to use Composite pattern
+			if (alienGroup != null) {
+				List<Alien> aliens = alienGroup.getAllAliens();
+				int shotX = shot.getX();
+				int shotY = shot.getY();
 
-				if (alien.isVisible() && shot.isVisible()) {
-					if (shotX >= (alienX) && shotX <= (alienX + ALIEN_WIDTH)
-							&& shotY >= (alienY)
-							&& shotY <= (alienY + ALIEN_HEIGHT)) {
-						// Use of SpriteManager for explosion image
-                        Image explImg = SpriteManager.getInstance().getSprite(
-                            getClass().getResource(expl).getPath()
-                        );
-						alien.setImage(explImg);
-						alien.setDying(true);
-						deaths++;
-						shot.die();
+				for (Alien alien : aliens) {
+					int alienX = alien.getX();
+					int alienY = alien.getY();
+
+					if (alien.isVisible() && shot.isVisible()) {
+						if (shotX >= (alienX) && shotX <= (alienX + ALIEN_WIDTH)
+								&& shotY >= (alienY)
+								&& shotY <= (alienY + ALIEN_HEIGHT)) {
+							Image explImg = SpriteManager.getInstance().getSprite(
+									getClass().getResource(expl).getPath());
+							alien.setImage(explImg);
+							alien.setDying(true);
+							deaths++;
+							shot.die();
+						}
 					}
 				}
 			}
@@ -251,91 +239,101 @@ public class Board extends JPanel implements Runnable, Commons {
 		}
 
 		// aliens
+		// Updated to use Composite pattern
+		if (alienGroup != null) {
+			List<Alien> aliens = alienGroup.getAllAliens();
+			for (Alien a1 : aliens) {
+				int x = a1.getX();
 
-		Iterator it1 = aliens.iterator();
-
-		while (it1.hasNext()) {
-			Alien a1 = (Alien) it1.next();
-			int x = a1.getX();
-
-			if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
-				direction = -1;
-				Iterator i1 = aliens.iterator();
-				while (i1.hasNext()) {
-					Alien a2 = (Alien) i1.next();
-					a2.setY(a2.getY() + GO_DOWN);
+				if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
+					direction = -1;
+					for (Alien a2 : aliens) {
+						a2.setY(a2.getY() + GO_DOWN);
+					}
+					break; // already handled the drop for this tick
 				}
-			}
 
-			if (x <= BORDER_LEFT && direction != 1) {
-				direction = 1;
-
-				Iterator i2 = aliens.iterator();
-				while (i2.hasNext()) {
-					Alien a = (Alien) i2.next();
-					a.setY(a.getY() + GO_DOWN);
+				if (x <= BORDER_LEFT && direction != 1) {
+					direction = 1;
+					for (Alien a : aliens) {
+						a.setY(a.getY() + GO_DOWN);
+					}
+					break;
 				}
 			}
 		}
+		// Updated to use Composite pattern
+		if (alienGroup != null) {
+			List<Alien> aliens = alienGroup.getAllAliens();
 
-		Iterator it = aliens.iterator();
-
-		while (it.hasNext()) {
-			Alien alien = (Alien) it.next();
-			if (alien.isVisible()) {
-
-				int y = alien.getY();
-
-				if (y > GROUND - ALIEN_HEIGHT) {
-					havewon = false;
-					ingame = false;
-					message = "Aliens est�o invadindo a gal�xia!";
+			for (Alien alien : aliens) {
+				if (alien.isVisible()) {
+					int y = alien.getY();
+					if (y > GROUND - ALIEN_HEIGHT) {
+						havewon = false;
+						ingame = false;
+						message = "Aliens est�o invadindo a gal�xia!";
+					}
+					alien.act(direction); // keep existing act() behavior
 				}
-
-				alien.act(direction);
 			}
 		}
 
 		// bombs
+		if (alienGroup != null) {
+			List<Alien> aliens = alienGroup.getAllAliens();
+			Random generator = new Random();
 
-		Iterator i3 = aliens.iterator();
-		Random generator = new Random();
+			for (Alien a : aliens) {
+				int shotRand = generator.nextInt(15);
+				Bomb b = a.getBomb();
+				if (shotRand == CHANCE && a.isVisible() && b.isDestroyed()) {
+					b.setDestroyed(false);
+					b.setX(a.getX());
+					b.setY(a.getY());
+				}
 
-		while (i3.hasNext()) {
-			int shot = generator.nextInt(15);
-			Alien a = (Alien) i3.next();
-			Bomb b = a.getBomb();
-			if (shot == CHANCE && a.isVisible() && b.isDestroyed()) {
+				int bombX = b.getX();
+				int bombY = b.getY();
+				int playerX = player.getX();
+				int playerY = player.getY();
 
-				b.setDestroyed(false);
-				b.setX(a.getX());
-				b.setY(a.getY());
+				if (player.isVisible() && !b.isDestroyed()) {
+					if (bombX >= (playerX) && bombX <= (playerX + PLAYER_WIDTH)
+							&& bombY >= (playerY)
+							&& bombY <= (playerY + PLAYER_HEIGHT)) {
+
+						Image explImg = SpriteManager.getInstance().getSprite(
+								getClass().getResource(expl).getPath());
+						player.setImage(explImg);
+						player.setDying(true);
+						b.setDestroyed(true);
+					}
+				}
+
+				if (!b.isDestroyed()) {
+					b.setY(b.getY() + 1);
+					if (b.getY() >= GROUND - BOMB_HEIGHT) {
+						b.setDestroyed(true);
+					}
+				}
 			}
+		}
 
-			int bombX = b.getX();
-			int bombY = b.getY();
-			int playerX = player.getX();
-			int playerY = player.getY();
+		if (alienGroup != null) {
 
-			if (player.isVisible() && !b.isDestroyed()) {
-				if (bombX >= (playerX) && bombX <= (playerX + PLAYER_WIDTH)
-						&& bombY >= (playerY)
-						&& bombY <= (playerY + PLAYER_HEIGHT)) {
-					
-                    // Use SpriteManager for explosion image
-                    Image explImg = SpriteManager.getInstance().getSprite(
-                        getClass().getResource(expl).getPath()
-                    );
-                    player.setImage(explImg);
-					player.setDying(true);
-					b.setDestroyed(true);
+			List<Alien> aliensToProcess = alienGroup.getAllAliens();
+			for (Alien alien : aliensToProcess) {
+				if (alien.isDying()) {
+					alien.die(); 
 				}
 			}
 
-			if (!b.isDestroyed()) {
-				b.setY(b.getY() + 1);
-				if (b.getY() >= GROUND - BOMB_HEIGHT) {
-					b.setDestroyed(true);
+			Iterator<AlienComponent> it = alienGroup.getChildren().iterator();
+			while (it.hasNext()) {
+				AlienComponent component = it.next();
+				if (component.isDestroyed()) {
+					it.remove(); 
 				}
 			}
 		}

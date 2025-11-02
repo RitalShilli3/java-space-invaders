@@ -1,9 +1,7 @@
+import java.awt.Graphics;
 
-/**
- * 
- * @author 
- */
-public class Alien extends Sprite implements Cloneable {
+// Implements AlienComponent for composite pattern
+public class Alien extends Sprite implements Cloneable, AlienComponent {
 
     private Bomb bomb;
    // private final String alien = "/img/alien.png";
@@ -44,5 +42,23 @@ public class Alien extends Sprite implements Cloneable {
 	public Bomb getBomb() {
 		return bomb;
 	}
+
+    // AlienComponent interface methods
+    @Override
+    public void draw(Graphics g) {
+        if (isVisible()) {
+            g.drawImage(getImage(), getX(), getY(), null);
+        }
+    }
+
+    @Override
+    public void move(int direction) {
+        this.x += direction;
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return !isVisible();
+    }
 
 }
