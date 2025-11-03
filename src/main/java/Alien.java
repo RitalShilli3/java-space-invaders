@@ -35,6 +35,17 @@ public class Alien extends Sprite implements Cloneable, AlienComponent {
 
     }
 
+    /**
+     * Apply damage to this alien. Default behavior: mark as dying and return true
+     * to indicate the alien was destroyed. Decorators (or subclasses) can
+     * override this to implement HP, armor, or other behaviors.
+     * @return true if the alien died, false otherwise
+     */
+    public boolean damage() {
+        this.setDying(true);
+        return true;
+    }
+
     /*
      * Getters & Setters
      */

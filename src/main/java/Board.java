@@ -89,11 +89,24 @@ public class Board extends JPanel implements Runnable, Commons {
 
 		alienGroup = new AlienGroup();
 
+		final String strongAlienPix = "/img/strong_alien.png";
+		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
 				Alien alien = proto.clone();
 				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
-				alienGroup.add(alien); // 👈 add each alien to the group instead of list
+				if (i == 0) {
+					// decorate first row aliens with stronger behavior
+					StrongAlien strong = new StrongAlien(alien, 3);
+					try {
+						strong.setImage(SpriteManager.getInstance().getSprite(getClass().getResource(strongAlienPix).getPath()));
+					} catch (Exception e) {
+						// if strong image not found, keep delegate image
+					}
+					alienGroup.add(strong);
+				} else {
+					alienGroup.add(alien);
+				}
 			}
 		}
 
@@ -219,11 +232,15 @@ public class Board extends JPanel implements Runnable, Commons {
 						if (shotX >= (alienX) && shotX <= (alienX + ALIEN_WIDTH)
 								&& shotY >= (alienY)
 								&& shotY <= (alienY + ALIEN_HEIGHT)) {
-							Image explImg = SpriteManager.getInstance().getSprite(
-									getClass().getResource(expl).getPath());
-							alien.setImage(explImg);
-							alien.setDying(true);
-							deaths++;
+							// delegate to alien.damage() so decorators can intercept
+							boolean died = alien.damage();
+							if (died) {
+								Image explImg = SpriteManager.getInstance().getSprite(
+										getClass().getResource(expl).getPath());
+								alien.setImage(explImg);
+								alien.setDying(true);
+								deaths++;
+							}
 							shot.die();
 						}
 					}
