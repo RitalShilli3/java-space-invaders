@@ -10,9 +10,10 @@ public abstract class AlienDecorator extends Alien {
     protected Alien delegate;
 
     public AlienDecorator(Alien delegate) {
-        // initialize the decorator with delegate's coordinates
-        super(delegate.getX(), delegate.getY());
+        super(0, 0, delegate.getAlienType());
         this.delegate = delegate;
+        setX(delegate.getX());
+        setY(delegate.getY());
     }
 
     @Override
@@ -78,6 +79,17 @@ public abstract class AlienDecorator extends Alien {
     @Override
     public void setY(int y) {
         delegate.setY(y);
+    }
+
+    // 2 Methods to access AlienType and currentHp == applying flyweight pattern
+    @Override
+    public AlienType getAlienType() {
+        return delegate.getAlienType();
+    }
+
+    @Override
+    public int getCurrentHp() {
+        return delegate.getCurrentHp();
     }
 
     @Override

@@ -45,6 +45,11 @@ public class Board extends JPanel implements Runnable, Commons {
 	// optional injected prototype for creating aliens (Prototype pattern)
 	private Alien alienPrototype;
 
+	// Level tracking and Flyweight types
+	private int currentLevel = 1;
+	private AlienType weakAlienType;
+	private AlienType strongAlienType;
+
 	/*
 	 * Constructor
 	 */
@@ -63,8 +68,16 @@ public class Board extends JPanel implements Runnable, Commons {
 		d = new Dimension(BOARD_WIDTH, BOARD_HEIGTH);
 		setBackground(Color.black);
 
+		initializeAlienTypes();
+
 		gameInit();
 		setDoubleBuffered(true);
+	}
+
+	private void initializeAlienTypes() {
+		AlienTypeFactory factory = AlienTypeFactory.getInstance();
+		weakAlienType = factory.getType("weak");
+		strongAlienType = factory.getType("strong");
 	}
 
 	public void addNotify() {
@@ -73,42 +86,18 @@ public class Board extends JPanel implements Runnable, Commons {
 	}
 
 	public void gameInit() {
-		// using the prototype pattern to create aliens
-		Alien proto = this.alienPrototype;
-		if (proto == null) {
-			proto = new Alien(0, 0);
 
-			// Use of SpriteManager singleton instead of new ImageIcon
-			proto.setImage(SpriteManager.getInstance().getSprite(proto.getClass().getResource(alienpix).getPath()));
-		} else {
-			// ensure prototype has an image configured (fallback to default)
-			if (proto.getImage() == null) {
-				proto.setImage(SpriteManager.getInstance().getSprite(proto.getClass().getResource(alienpix).getPath()));
-			}
-		}
+		// Get Flyweight types
+		AlienType currentAlienType = (currentLevel == 1) ? weakAlienType : strongAlienType;
+
+		Alien proto = new Alien(0, 0, currentAlienType);
 
 		alienGroup = new AlienGroup();
+		createAliensForCurrentLevel(proto);
+		alienGroup = new AlienGroup();
 
-		final String strongAlienPix = "/img/strong_alien.png";
-		
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 6; j++) {
-				Alien alien = proto.clone();
-				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
-				if (i == 0) {
-					// decorate first row aliens with stronger behavior
-					StrongAlien strong = new StrongAlien(alien, 3);
-					try {
-						strong.setImage(SpriteManager.getInstance().getSprite(getClass().getResource(strongAlienPix).getPath()));
-					} catch (Exception e) {
-						// if strong image not found, keep delegate image
-					}
-					alienGroup.add(strong);
-				} else {
-					alienGroup.add(alien);
-				}
-			}
-		}
+		// Level-based alien creation
+		createAliensForCurrentLevel(proto);
 
 		player = new Player();
 		shot = new Shot();
@@ -116,6 +105,43 @@ public class Board extends JPanel implements Runnable, Commons {
 		if (animator == null || !ingame) {
 			animator = new Thread(this);
 			animator.start();
+		}
+	}
+
+	// create aliens based on current level
+	private void createAliensForCurrentLevel(Alien prototype) {
+		if (prototype == null) {
+			AlienType currentAlienType = (currentLevel == 1) ? weakAlienType : strongAlienType;
+			prototype = new Alien(0, 0, currentAlienType);
+		}
+
+		final String strongAlienPix = "/img/strong_alien.png";
+		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 6; j++) {
+				Alien alien = prototype.clone();
+				alien.setPosition(alienX + 18 * j, alienY + 18 * i);
+
+				alien.initializeImage();
+				
+				if (currentLevel == 1) {
+					// Level 1: Basic weak aliens 
+					alienGroup.add(alien);
+				} else {
+					// // Level 2: Strong aliens with decorator
+					StrongAlien strong = new StrongAlien(alien, strongAlienType.getMaxHp());
+					System.out.println("StrongAlien created - delegate image: " + (alien.getImage() != null));
+					System.out.println("StrongAlien type image: " + (strongAlienType.getImage() != null));
+
+					try {
+						strong.setImage(strongAlienType.getImage());
+						System.out.println("StrongAlien image set: " + (strong.getImage() != null));
+					} catch (Exception e) {
+						System.out.println("Strong image setting failed: " + e.getMessage());
+					}
+					alienGroup.add(strong);
+				}
+			}
 		}
 	}
 
@@ -206,6 +232,28 @@ public class Board extends JPanel implements Runnable, Commons {
 	}
 
 	public void animationCycle() {
+		// Check for level completion
+		if (alienGroup.isDestroyed() && ingame) {
+			if (currentLevel == 1) {
+				// Progress to level 2
+				currentLevel++;
+				deaths = 0;
+				alienGroup = new AlienGroup();
+				AlienType currentAlienType = strongAlienType; // Level 2 uses strong type
+				Alien prototype = new Alien(0, 0, currentAlienType);
+				createAliensForCurrentLevel(prototype);
+				return;
+			} else {
+				ingame = false;
+				message = "Parabens! Voc® salvou a galexia!";
+			}
+		}
+
+		if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
+			ingame = false;
+			message = "Parabens! Voc® salvou a galexia!";
+		}
+
 		if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
 			ingame = false;
 			message = "Parab�ns! Voc� salvou a gal�xia!";
@@ -224,7 +272,7 @@ public class Board extends JPanel implements Runnable, Commons {
 				int shotX = shot.getX();
 				int shotY = shot.getY();
 
-				for (Alien alien : aliens) {
+				for (Alien alien : alienGroup.getAllAliens()) {
 					int alienX = alien.getX();
 					int alienY = alien.getY();
 
@@ -259,12 +307,13 @@ public class Board extends JPanel implements Runnable, Commons {
 		// Updated to use Composite pattern
 		if (alienGroup != null) {
 			List<Alien> aliens = alienGroup.getAllAliens();
-			for (Alien a1 : aliens) {
+
+			for (Alien a1 : alienGroup.getAllAliens()) {
 				int x = a1.getX();
 
 				if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
 					direction = -1;
-					for (Alien a2 : aliens) {
+					for (Alien a2 : alienGroup.getAllAliens()) {
 						a2.setY(a2.getY() + GO_DOWN);
 					}
 					break; // already handled the drop for this tick
@@ -272,7 +321,7 @@ public class Board extends JPanel implements Runnable, Commons {
 
 				if (x <= BORDER_LEFT && direction != 1) {
 					direction = 1;
-					for (Alien a : aliens) {
+					for (Alien a : alienGroup.getAllAliens()) {
 						a.setY(a.getY() + GO_DOWN);
 					}
 					break;
@@ -283,7 +332,7 @@ public class Board extends JPanel implements Runnable, Commons {
 		if (alienGroup != null) {
 			List<Alien> aliens = alienGroup.getAllAliens();
 
-			for (Alien alien : aliens) {
+			for (Alien alien : alienGroup.getAllAliens()) {
 				if (alien.isVisible()) {
 					int y = alien.getY();
 					if (y > GROUND - ALIEN_HEIGHT) {
@@ -301,7 +350,7 @@ public class Board extends JPanel implements Runnable, Commons {
 			List<Alien> aliens = alienGroup.getAllAliens();
 			Random generator = new Random();
 
-			for (Alien a : aliens) {
+			for (Alien a : alienGroup.getAllAliens()) {
 				int shotRand = generator.nextInt(15);
 				Bomb b = a.getBomb();
 				if (shotRand == CHANCE && a.isVisible() && b.isDestroyed()) {
@@ -342,7 +391,7 @@ public class Board extends JPanel implements Runnable, Commons {
 			List<Alien> aliensToProcess = alienGroup.getAllAliens();
 			for (Alien alien : aliensToProcess) {
 				if (alien.isDying()) {
-					alien.die(); 
+					alien.die();
 				}
 			}
 
@@ -350,7 +399,7 @@ public class Board extends JPanel implements Runnable, Commons {
 			while (it.hasNext()) {
 				AlienComponent component = it.next();
 				if (component.isDestroyed()) {
-					it.remove(); 
+					it.remove();
 				}
 			}
 		}
